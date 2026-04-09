@@ -6,6 +6,7 @@ using namespace std;
 class BigInt {
     string number;    // Stores the number as a string
     bool isNegative;  // True if number is negative
+
     // Remove unnecessary leading zeros from the number string
     void removeLeadingZeros() {
         for(size_t i = 0; i < number.size() - 1; ++i) {
@@ -17,7 +18,7 @@ class BigInt {
         }
     }
     //ADDING OPERATORS FOR MAGNITUDES ARTHIMETIC OPERATIONS (BEGIN)
-    string add(const string& a, const string& b){
+    static string add(const string& a, const string& b){
         string result;
         int carry = 0;
         int i = (int)a.size() - 1;
@@ -32,7 +33,7 @@ class BigInt {
         return result.empty() ? "0" : string(result.rbegin(), result.rend());
     }
 
-    string subtract(const string& a, const string& b) {
+    static string subtract(const string& a, const string& b) {
         string result;
         int borrow = 0;
         int i = (int)a.size() - 1;
@@ -55,10 +56,10 @@ class BigInt {
         }
         return string(result.rbegin(), result.rend());
     }
-    string multiply(const string& a,const string& b){
+    static string multiply(const string& a,const string& b){
         int n = (int)a.size(), m = (int)b.size();
         vector<int> digits(n + m, 0);
- 
+
         for (int i = n - 1; i >= 0; --i) {
             for (int j = m - 1; j >= 0; --j) {
                 int mul = (a[i] - '0') * (b[j] - '0');
@@ -68,7 +69,7 @@ class BigInt {
                 digits[p1] += sum / 10;
             }
         }
- 
+
         string result;
         for (int d : digits) {
             if (!(result.empty() && d == 0)) {
@@ -83,7 +84,7 @@ class BigInt {
         if (a == b) return 0;
         return (a > b) ? 1 : -1;
     }
-    string divide(const string& a, const string& b) {
+    static string divide(const string& a, const string& b) {
         if (b == "0") {
             throw runtime_error("Error: Division by zero");
         }
@@ -107,22 +108,7 @@ class BigInt {
     //(END)
     // Compare absolute values of two BigInts (ignore signs)
     // Returns: 1 if |this| > |other|, 0 if equal, -1 if |this| < |other|
-    int compareMagnitude(const BigInt& other) const {
-        if(number.size() > other.number.size()) {
-            return 1;
-        } else if (number.size() < other.number.size()) {
-            return -1;
-        } else {
-            for (size_t i = 0; i < number.size(); ++i) {
-                if (number[i] > other.number[i]) {
-                    return 1;
-                } else if (number[i] < other.number[i]) {
-                    return -1;
-                }
-            }
-        }
-        return 0;
-    }
+
 
 public:
     // Default constructor - initialize to zero
@@ -132,13 +118,14 @@ public:
     }
 
     // Constructor from 64-bit integer
-    BigInt(int64_t value) {
+    BigInt(long long value) {
         if(value < 0) {
             isNegative = true;
             value = -value;
         } else {
             isNegative = false;
         }
+        number = to_string(value);
     }
 
     // Constructor from string representation
@@ -155,7 +142,7 @@ public:
         } else {
             isNegative = false;
         }
-        
+
         for(char c : number) {
             if(c < '0' || c > '9') {
                 cout << "Invalid character in input string: " << c << " Automatically set to zero." << endl;
@@ -175,6 +162,26 @@ public:
 
     // Destructor
     ~BigInt() {}
+    bool getSign() const {
+        return isNegative;
+    }
+
+    int compareMagnitude(const BigInt& other) const {
+        if(number.size() > other.number.size()) {
+            return 1;
+        } else if (number.size() < other.number.size()) {
+            return -1;
+        } else {
+            for (size_t i = 0; i < number.size(); ++i) {
+                if (number[i] > other.number[i]) {
+                    return 1;
+                } else if (number[i] < other.number[i]) {
+                    return -1;
+                }
+            }
+        }
+        return 0;
+    }
 
     // Assignment operator
     BigInt& operator=(const BigInt& other) {
@@ -264,14 +271,16 @@ public:
 
     // Modulus assignment operator (x %= y)
     BigInt& operator%=(const BigInt& other) {
-        if(other.number == "0") {
-            throw runtime_error("Division by zero");
-        }
-            BigInt quotient = *this / other;
-            BigInt product = quotient * other;
-            *this -= product;
-        return *this;
+    if(other.number == "0") {
+        throw runtime_error("Division by zero");
     }
+    BigInt quotient = *this;
+    quotient /= other;                   
+    BigInt product = quotient;
+    product *= other;                    
+    *this -= product;
+    return *this;
+}
 
     // Pre-increment operator (++x)
     BigInt& operator++() {
@@ -331,7 +340,7 @@ public:
 };
 
 // Binary addition operator (x + y)
-BigInt operator+(BigInt lhs, const BigInt& rhs) { 
+BigInt operator+(BigInt lhs, const BigInt& rhs) {
     return lhs += rhs;
 }
 
@@ -379,19 +388,42 @@ bool operator<(const BigInt& lhs, const BigInt& rhs) {
 
 // Less-than-or-equal comparison operator (x <= y)
 bool operator<=(const BigInt& lhs, const BigInt& rhs) {
-    if(lhs.)
+    if(lhs.getSign() == false && rhs.getSign() == true) {
+        return true;
+    } else if(lhs.getSign() == true && rhs.getSign() == false) {
+        return false;
+    } else if(lhs.getSign() == false && rhs.getSign() == false) {
+        return lhs.compareMagnitude(rhs) <= 0;
+    } else {
+        return lhs.compareMagnitude(rhs) >= 0;
+    }
+
 }
 
 // Greater-than comparison operator (x > y)
 bool operator>(const BigInt& lhs, const BigInt& rhs) {
-    // TODO: Implement this operator
-    return false;
+    if(lhs.getSign() == false && rhs.getSign() == true) {
+        return true;
+    } else if(lhs.getSign() == true && rhs.getSign() == false) {
+        return false;
+    } else if(lhs.getSign() == false && rhs.getSign() == false) {
+        return lhs.compareMagnitude(rhs) > 0;
+    } else {
+        return lhs.compareMagnitude(rhs) < 0;
+    }
 }
 
 // Greater-than-or-equal comparison operator (x >= y)
 bool operator>=(const BigInt& lhs, const BigInt& rhs) {
-    // TODO: Implement this operator
-    return false;
+    if(lhs.getSign() == false && rhs.getSign() == true) {
+        return true;
+    } else if(lhs.getSign() == true && rhs.getSign() == false) {
+        return false;
+    } else if(lhs.getSign() == false && rhs.getSign() == false) {
+        return lhs.compareMagnitude(rhs) >= 0;
+    } else {
+        return lhs.compareMagnitude(rhs) <= 0;
+    }
 }
 
 int main() {
@@ -400,7 +432,7 @@ int main() {
     cout << "Your task is to implement ALL the functions above." << endl;
     cout << "The tests below will work once you implement them correctly." << endl << endl;
 
-    /*
+
     // Test 1: Constructors and basic output
     cout << "1. Constructors and output:" << endl;
     BigInt a(12345);              // Should create BigInt from integer
@@ -456,7 +488,7 @@ int main() {
     cout << "Negative multiplication: " << BigInt(-5) * BigInt(3) << endl;  // Should be "-15"
     cout << "Negative division: " << BigInt(-10) / BigInt(3) << endl;       // Should be "-3"
     cout << "Negative modulus: " << BigInt(-10) % BigInt(3) << endl;        // Should be "-1"
-    */
+
 
     return 0;
 }
